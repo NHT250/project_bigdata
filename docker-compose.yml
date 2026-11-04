@@ -1,0 +1,122 @@
+# Hạ tầng đồ án. Chạy trên VM Oracle Cloud Always Free (4 core ARM, 24 GB RAM).
+# Mọi image đều có bản arm64 chính thức.
+#
+# Dùng: cp .env.example .env && sửa WIKI_CONTACT && make up
+
+services:
+  kafka:
+    image: bitnami/kafka:3.9
+    platform: linux/arm64
+    restart: unless-stopped
+    environment:
+      # KRaft: không cần Zookeeper
+      KAFKA_CFG_NODE_ID: "1"
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "false"
+      # retention 24h: đủ để phát lại khi job chết, không ngốn đĩa (spec §3.1)
+      KAFKA_CFG_LOG_RETENTION_HOURS: "24"
+    volumes:
+      - kafka-data:/bitnami/kafka
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  kafka-init:
+    image: bitnami/kafka:3.9
+    platform: linux/arm64
+    depends_on:
+      kafka:
+        condition: service_healthy
+    # 3 partition, key = page_title (spec §3.3)
+    command: >
+      bash -c "kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists
+      --topic rc.raw --partitions 3 --replication-factor 1
+      --config retention.ms=86400000"
+    restart: "no"
+
+  postgres:
+    image: postgres:16-alpine
+    platform: linux/arm64
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: wiki
+      POSTGRES_PASSWORD: wiki
+      POSTGRES_DB: wiki
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wiki -d wiki"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  spark:
+    image: bitnami/spark:3.5.3
+    platform: linux/arm64
+    restart: unless-stopped
+    # local mode trên VM 24 GB: một tiến trình, ít thứ phải vận hành hơn
+    environment:
+      SPARK_MODE: master
+      SPARK_DAEMON_MEMORY: 2g
+    volumes:
+      - ./:/app:ro
+      - delta-data:/data/delta
+      - spark-state:/state
+    working_dir: /app
+    command: tail -f /dev/null
+
+  ingest:
+    image: python:3.11-slim
+    platform: linux/arm64
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      KAFKA_BOOTSTRAP: kafka:9092
+      PYTHONPATH: /app
+    volumes:
+      - ./:/app
+      - spark-state:/state
+    working_dir: /app
+    command: >
+      bash -c "pip install --no-cache-dir kafka-python-ng==2.2.3 &&
+      python -m src.ingest.main"
+
+  api:
+    image: python:3.11-slim
+    platform: linux/arm64
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      PG_DSN: postgresql://wiki:wiki@postgres:5432/wiki
+      PYTHONPATH: /app
+    volumes:
+      - ./:/app
+    working_dir: /app
+    ports:
+      - "8000:8000"
+    command: >
+      bash -c "pip install --no-cache-dir fastapi==0.115.6 'uvicorn[standard]==0.34.0'
+      'psycopg[binary]==3.2.3' psycopg-pool==3.2.4 &&
+      uvicorn src.api.main:app --host 0.0.0.0 --port 8000"
+
+volumes:
+  kafka-data:
+  pg-data:
+  delta-data:
+  spark-state:
