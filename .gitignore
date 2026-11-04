@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.superpowers/
+data/
+state/
+.pytest_cache/
+spark-warehouse/
+delta/
