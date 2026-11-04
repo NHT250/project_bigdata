@@ -17,6 +17,8 @@ from typing import Any, Iterable, Iterator
 
 MAX_BACKOFF_SECONDS = 30
 READ_TIMEOUT_SECONDS = 60
+RECONNECT_DELAY_SECONDS = 1
+"""Chờ bao lâu sau khi server đóng luồng bình thường, trước khi nối lại."""
 
 
 def parse_sse(
@@ -99,6 +101,10 @@ def stream(
                 close = getattr(response, "close", None)
                 if close:
                     close()
+            # Server đóng luồng bình thường. Vẫn phải chờ trước khi nối lại:
+            # nối lại tức thì tạo vòng lặp dồn request vào Wikimedia, vi phạm
+            # yêu cầu tần suất ở spec §2 mục 3.
+            sleep(RECONNECT_DELAY_SECONDS)
         except (urllib.error.URLError, TimeoutError, OSError):
             sleep(backoff)
             backoff = min(backoff * 2, MAX_BACKOFF_SECONDS)

@@ -133,15 +133,17 @@ def fetch_diff(
             "formatversion": "2",
             "format": "json",
         }
+        if page_title:
+            params["titles"] = page_title
     else:
+        # action=compare nhận fromtitle/totitle, KHÔNG nhận titles. Gửi titles
+        # vào đây làm MediaWiki trả lỗi và mọi diff thất bại.
         params = {
             "action": "compare",
             "fromrev": str(parent_id),
             "torev": str(rev_id),
             "format": "json",
         }
-    if page_title:
-        params["titles"] = page_title
 
     url = f"{api_url}?{urllib.parse.urlencode(params, quote_via=urllib.parse.quote)}"
     headers = {"User-Agent": user_agent, "Accept": "application/json"}

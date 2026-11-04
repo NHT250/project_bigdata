@@ -115,11 +115,16 @@ def test_null_parent_id_requests_new_page_content_not_a_comparison():
     assert r.removed == ""
 
 
-def test_page_title_with_unicode_and_slash_is_url_encoded():
-    http = FakeHttp(compare_body(added="x"))
-    fetch_diff(2, 1, UA, http=http, page_title="Bão/Yagi's path")
+def test_page_title_with_unicode_and_slash_is_url_encoded_on_new_page_path():
+    """Chỉ nhánh trang mới (action=query) gửi titles, và phải encode đúng."""
+    body = json.dumps(
+        {"query": {"pages": [{"revisions": [{"slots": {"main": {"content": "x"}}}]}]}}
+    )
+    http = FakeHttp(body)
+    fetch_diff(2, None, UA, http=http, page_title="Bão/Yagi's path")
     assert " " not in http.last_url
-    assert "Yagi" in http.last_url or "B%C3%A3o" in http.last_url
+    assert "B%C3%A3o" in http.last_url
+    assert "%2F" in http.last_url or "/Yagi" in http.last_url
 
 
 # --- Review Focus #3: diff quá lớn --------------------------------------
@@ -204,3 +209,18 @@ def test_rate_limiter_rejects_non_positive_rps():
 
     with pytest.raises(ValueError):
         RateLimiter(0)
+
+
+# --- findings từ final review -------------------------------------------
+
+
+def test_compare_request_does_not_send_titles_param():
+    """action=compare nhận fromtitle/totitle, KHÔNG nhận titles.
+
+    Gửi titles vào compare làm MediaWiki trả lỗi -> mọi diff thất bại trong
+    production, trong khi test cũ chỉ kiểm URL-encoding nên không phát hiện.
+    """
+    http = FakeHttp(compare_body(added="x"))
+    fetch_diff(2, 1, UA, http=http, page_title="Bão/Yagi")
+    assert "titles=" not in http.last_url
+    assert "action=compare" in http.last_url

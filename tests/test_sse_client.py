@@ -77,3 +77,43 @@ def test_large_batch_is_streamed_lazily():
     first = next(gen)
     assert first == ("0", {"x": 0})
     assert sum(1 for _ in gen) == 999
+
+
+# --- finding từ final review --------------------------------------------
+
+
+def test_normal_stream_close_waits_before_reconnecting():
+    """Server đóng luồng -> phải chờ trước khi nối lại.
+
+    Nối lại tức thì tạo vòng lặp dồn request vào Wikimedia, vi phạm yêu cầu
+    tần suất ở spec §2 mục 3.
+    """
+    from src.ingest.sse_client import stream
+
+    slept = []
+
+    class Resp:
+        def __init__(self):
+            self._lines = iter([b"id: a\n", b'data: {"x":1}\n', b"\n"])
+
+        def __iter__(self):
+            return self._lines
+
+        def close(self):
+            pass
+
+    def opener(request, timeout=None):
+        return Resp()
+
+    events = list(
+        stream(
+            "https://example.org/stream",
+            "ua",
+            opener=opener,
+            sleep=slept.append,
+            max_reconnects=3,
+        )
+    )
+    assert len(events) == 4
+    assert len(slept) >= 3
+    assert all(s > 0 for s in slept)
