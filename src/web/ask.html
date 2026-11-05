@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hỏi đáp · Wikipedia thời gian thực</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body data-page="ask">
+  <header class="site-header">
+    <div>
+      <h1>Hỏi dữ liệu</h1>
+      <p class="tagline">Chọn một câu hỏi. Mỗi câu là một truy vấn SQL viết sẵn trên tầng phục vụ</p>
+    </div>
+    <nav class="site-nav" aria-label="Trang">
+      <a href="/">Dashboard</a>
+      <a href="page.html">Tra cứu trang</a>
+      <a href="ask.html" aria-current="page">Hỏi đáp</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="ask-list" id="ask-list"></div>
+    <section>
+      <h2 id="ask-title"></h2>
+      <div class="table-wrap">
+        <table id="ask-result"><thead></thead><tbody></tbody></table>
+      </div>
+    </section>
+    <p class="status" id="status"></p>
+  </main>
+
+  <footer>
+    Dữ liệu từ Wikipedia, giấy phép <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.
+    Đồ án Big Data Analytics, Đại học Văn Lang.
+  </footer>
+</body>
+</html>

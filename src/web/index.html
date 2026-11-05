@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wikipedia thời gian thực</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body data-page="dashboard">
+  <header class="site-header">
+    <div>
+      <h1>Wikipedia, ngay lúc này</h1>
+      <p class="tagline">Mọi lượt sửa trên Wikipedia tiếng Anh, cập nhật mỗi 5 giây</p>
+    </div>
+    <nav class="site-nav" aria-label="Trang">
+      <a href="/" aria-current="page">Dashboard</a>
+      <a href="page.html">Tra cứu trang</a>
+      <a href="ask.html">Hỏi đáp</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="stats" aria-live="polite">
+      <div class="stat-card"><span class="value" id="stat-epm">–</span><span class="label">edit mỗi phút (5 phút qua)</span></div>
+      <div class="stat-card"><span class="value" id="stat-anon">–</span><span class="label">edit vô danh (1 giờ qua)</span></div>
+      <div class="stat-card"><span class="value" id="stat-hot">–</span><span class="label">trang đang bùng nổ</span></div>
+      <div class="stat-card is-risk"><span class="value" id="stat-risk">–</span><span class="label">edit rủi ro cao chờ xem</span></div>
+    </div>
+
+    <div class="grid">
+      <section>
+        <h2>Số edit mỗi phút, 6 giờ qua</h2>
+        <p class="hint">Đường xanh: tổng edit. Đường hổ phách: edit vô danh.</p>
+        <div class="chart-box"><canvas id="epm-chart" aria-label="Biểu đồ số edit mỗi phút"></canvas></div>
+      </section>
+      <section>
+        <h2>Sự kiện nóng</h2>
+        <p class="hint">Trang có số edit vượt đường nền 24 giờ của chính nó (z &gt; 3) và từ 3 người sửa trở lên.</p>
+        <div class="table-wrap">
+          <table id="hot-table">
+            <thead><tr><th>Trang</th><th class="num">z</th><th class="num">Edit</th><th class="num">Người</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <section>
+      <h2>Edit rủi ro cao</h2>
+      <p class="hint">Điểm do model nhóm tự huấn luyện trên nhãn revert. Điểm cao nghĩa là edit dễ bị cộng đồng gỡ bỏ, không chắc chắn là phá hoại.</p>
+      <div class="table-wrap">
+        <table id="risk-table">
+          <thead><tr><th>Trang</th><th class="num">Điểm</th><th>Nội dung thay đổi</th><th>Xem</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Edit mới nhất</h2>
+      <p class="hint">Thanh xanh: số byte thêm vào. Thanh hổ phách: số byte bị xoá.</p>
+      <ol class="stream" id="live-stream"></ol>
+      <p class="status" id="status"></p>
+    </section>
+  </main>
+
+  <footer>
+    Nội dung diff lấy từ Wikipedia qua API chính thức, giấy phép
+    <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.
+    Mỗi dòng có link về bài gốc. Danh tính người sửa đã được băm. Đồ án Big Data Analytics, Đại học Văn Lang.
+  </footer>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tra cứu trang · Wikipedia thời gian thực</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body data-page="lookup">
+  <header class="site-header">
+    <div>
+      <h1>Tra cứu một trang</h1>
+      <p class="tagline">Bảy ngày chỉnh sửa của một bài viết: số edit mỗi giờ, rủi ro và tóm tắt thay đổi</p>
+    </div>
+    <nav class="site-nav" aria-label="Trang">
+      <a href="/">Dashboard</a>
+      <a href="page.html" aria-current="page">Tra cứu trang</a>
+      <a href="ask.html">Hỏi đáp</a>
+    </nav>
+  </header>
+
+  <main>
+    <form class="search" id="search" role="search">
+      <label class="status" for="title" style="flex-basis:100%">Tên bài viết, như trên Wikipedia (dấu cách hoặc gạch dưới đều được)</label>
+      <input id="title" name="title" autocomplete="off" placeholder="Typhoon Yagi" required>
+      <button id="go" type="submit">Tra cứu</button>
+    </form>
+
+    <p class="empty" id="empty" hidden></p>
+
+    <div id="result" hidden>
+      <section>
+        <h2><a id="page-link" class="title" rel="noopener" target="_blank"></a></h2>
+        <p class="hint">Cột xanh: số edit mỗi giờ. Đường đỏ: điểm rủi ro cao nhất trong giờ đó.</p>
+        <div class="chart-box"><canvas id="hourly" aria-label="Biểu đồ số edit mỗi giờ"></canvas></div>
+      </section>
+      <section>
+        <h2>Thay đổi gần đây</h2>
+        <p class="hint">Edit trong 2 giờ qua. Người sửa hiển thị dưới dạng mã băm, không lưu IP hay tên tài khoản.</p>
+        <div class="table-wrap">
+          <table id="edits-table">
+            <thead><tr><th>Thời điểm</th><th>Tóm tắt</th><th class="num">Điểm</th><th>Người sửa (băm)</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+    <p class="status" id="status"></p>
+  </main>
+
+  <footer>
+    Dữ liệu từ Wikipedia, giấy phép <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.
+    Đồ án Big Data Analytics, Đại học Văn Lang.
+  </footer>
+</body>
+</html>
