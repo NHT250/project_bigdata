@@ -209,3 +209,51 @@ def bronze_struct():  # pragma: no cover - cần pyspark, chạy trên VM
             StructField("raw_json", StringType()),
         ]
     )
+
+
+def enriched_input_struct():  # pragma: no cover - cần pyspark
+    """Bronze + 3 cột diff: đầu vào của ``features.add_cheap_features``."""
+    from pyspark.sql.types import StringType, StructField
+
+    struct = bronze_struct()
+    for name in ("diff_added", "diff_removed", "diff_status"):
+        struct = struct.add(StructField(name, StringType()))
+    return struct
+
+
+def silver_struct():  # pragma: no cover - cần pyspark
+    """``StructType`` đầy đủ của ``silver/edits_enriched`` (spec §5.2) + ``dt``."""
+    from pyspark.sql.types import (
+        BooleanType,
+        DateType,
+        DoubleType,
+        IntegerType,
+        StringType,
+        StructField,
+    )
+
+    types = {
+        "diff_added": StringType(),
+        "diff_removed": StringType(),
+        "diff_status": StringType(),
+        "byte_delta": IntegerType(),
+        "abs_byte_delta": IntegerType(),
+        "comment_len": IntegerType(),
+        "comment_empty": BooleanType(),
+        "has_url_added": BooleanType(),
+        "upper_ratio": DoubleType(),
+        "repeat_char": BooleanType(),
+        "words_added": IntegerType(),
+        "words_removed": IntegerType(),
+        "hour_of_day": IntegerType(),
+        "day_of_week": IntegerType(),
+        "page_edits_prev_1h": IntegerType(),
+        "user_edits_prev_1h": IntegerType(),
+        "risk_score": DoubleType(),
+        "model_version": StringType(),
+        "summary": StringType(),
+    }
+    struct = bronze_struct()
+    for name in SILVER_EXTRA_FIELDS:
+        struct = struct.add(StructField(name, types[name]))
+    return struct.add(StructField("dt", DateType()))
