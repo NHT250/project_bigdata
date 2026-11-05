@@ -160,3 +160,16 @@ def test_model_scores_are_written_when_model_given(spark, tmp_path, pg_conn, fak
 
 def test_settings_user_agent_is_declared(settings):
     assert "VLU-BigData-RealtimeWiki" in replace(settings).user_agent
+
+
+def test_silver_reads_in_a_batch_prune_dt_partitions(spark, tmp_path, pg_conn, fake_http, settings):
+    """Mỗi batch 10 giây chỉ được đọc vài partition dt của silver, không quét cả bảng."""
+    from datetime import datetime, timezone
+
+    from src.stream.main import _read_silver, silver_between
+
+    process_batch(spark, kafka_batch(spark, tmp_path, n=10), settings, fake_http, pg_conn)
+    silver = _read_silver(spark, settings.delta_root)
+    t = datetime(2026, 11, 4, 10, 0, tzinfo=timezone.utc)
+    plan = silver_between(silver, t, t)._jdf.queryExecution().executedPlan().toString()
+    assert "PartitionFilters: [" in plan and "dt#" in plan.split("PartitionFilters: [")[1].split("]")[0]

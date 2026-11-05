@@ -14,7 +14,7 @@ import os
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from datetime import timedelta
+from datetime import timedelta, timezone
 from typing import Iterable
 
 from pyspark.sql import DataFrame, SparkSession
@@ -214,6 +214,24 @@ def _read_silver(spark: SparkSession, delta_root: str) -> DataFrame | None:
     return spark.read.format("delta").load(path)
 
 
+def _utc_date(t):
+    # datetime từ collect() là giờ địa phương không kèm múi; astimezone hiểu đúng điều đó
+    return t.astimezone(timezone.utc).date()
+
+
+def silver_between(silver: DataFrame, t_from, t_to) -> DataFrame:
+    """Dòng silver có ``t_from <= event_time <= t_to``.
+
+    Lọc thêm theo partition ``dt`` bằng hằng số ngày để Delta chỉ mở vài thư
+    mục ngày, thay vì quét toàn bộ silver mỗi batch 10 giây.
+    """
+    return silver.filter(
+        F.col("dt").between(F.lit(_utc_date(t_from)), F.lit(_utc_date(t_to)))
+        & (F.col("event_time") >= F.lit(t_from))
+        & (F.col("event_time") <= F.lit(t_to))
+    )
+
+
 def _with_history_window_features(batch: DataFrame, silver, t_min, t_max) -> DataFrame:
     """Feature ``*_prev_1h`` cần 1 giờ lịch sử, mà batch chỉ có 10 giây.
 
@@ -224,10 +242,7 @@ def _with_history_window_features(batch: DataFrame, silver, t_min, t_max) -> Dat
     data = batch.withColumn("_in_batch", F.lit(True))
     if silver is not None:
         context = (
-            silver.filter(
-                (F.col("event_time") >= F.lit(t_min - timedelta(hours=1)))
-                & (F.col("event_time") <= F.lit(t_max))
-            )
+            silver_between(silver, t_min - timedelta(hours=1), t_max)
             .select(*cols)
             .join(batch.select("wiki", "rev_id"), ["wiki", "rev_id"], "left_anti")
         )
@@ -243,7 +258,8 @@ def _metrics_rows(silver: DataFrame, minutes: list, hot_df) -> list[dict]:
     """Tính lại TRỌN mỗi phút bị chạm từ silver — replay không đếm trùng."""
     if not minutes:
         return []
-    m = silver.withColumn("minute", F.date_trunc("minute", "event_time")).filter(
+    span = silver_between(silver, min(minutes), max(minutes) + timedelta(minutes=1))
+    m = span.withColumn("minute", F.date_trunc("minute", "event_time")).filter(
         F.col("minute").isin(minutes)
     )
     agg = m.groupBy("wiki", "minute").agg(
@@ -338,10 +354,8 @@ def process_batch(
     hot_df = None
     hot_rows: list[dict] = []
     if pages:
-        recent = silver.filter(
-            (F.col("event_time") >= F.lit(t_min - timedelta(hours=24)))
-            & (F.col("event_time") <= F.lit(t_max))
-            & F.col("page_title").isin(pages)
+        recent = silver_between(silver, t_min - timedelta(hours=24), t_max).filter(
+            F.col("page_title").isin(pages)
         )
         hot_df = (
             burst.detect(recent, settings.burst_z_threshold, settings.burst_min_users)
