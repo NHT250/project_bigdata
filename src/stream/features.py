@@ -59,3 +59,27 @@ def add_cheap_features(df: DataFrame) -> DataFrame:
         .withColumn("hour_of_day", F.hour("event_time").cast("int"))
         .withColumn("day_of_week", F.dayofweek("event_time").cast("int"))
     )
+
+
+def _past_hour(*keys: str):
+    # Biên trên là -1, KHÔNG phải 0: 0 sẽ đếm cả chính dòng này và mọi dòng
+    # cùng giây. Chỉ nhìn về quá khứ, không bao giờ nhìn về tương lai.
+    return (
+        Window.partitionBy(*keys)
+        .orderBy(F.unix_timestamp("event_time"))
+        .rangeBetween(-ONE_HOUR_SECONDS, -1)
+    )
+
+
+def add_window_features(df: DataFrame) -> DataFrame:
+    """Thêm ``page_edits_prev_1h`` và ``user_edits_prev_1h``.
+
+    Chỉ đếm edit xảy ra TRƯỚC edit hiện tại trong vòng 1 giờ. Đây là chỗ chặn
+    rò rỉ dữ liệu — xem ``tests/test_features_no_future_leak.py``.
+    """
+    page_count = F.count(F.lit(1)).over(_past_hour("wiki", "page_title"))
+    user_count = F.count(F.lit(1)).over(_past_hour("wiki", "user_hash"))
+    return df.withColumn("page_edits_prev_1h", page_count.cast("int")).withColumn(
+        "user_edits_prev_1h",
+        F.when(F.col("user_hash").isNull(), F.lit(0)).otherwise(user_count).cast("int"),
+    )
