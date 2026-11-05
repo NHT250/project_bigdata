@@ -31,7 +31,7 @@ FEATURE_COLS: tuple[str, ...] = (
 )
 
 MODEL_DIR = "models"
-CURRENT = "current"
+CURRENT_VERSION_FILE = "CURRENT_VERSION"
 
 
 def prepare_features(df: DataFrame, cols=FEATURE_COLS) -> DataFrame:
@@ -67,21 +67,23 @@ def score(df: DataFrame, model, model_version: str | None) -> DataFrame:
     return scored.select(*keep, "risk_score", "model_version")
 
 
-def model_path(delta_root: str) -> str:
-    return os.path.join(delta_root, MODEL_DIR, CURRENT)
+def load_current(delta_root: str):
+    """Nạp model mới nhất do job batch ghi. Trả ``(model, version)``.
 
-
-def load_current(delta_root: str):  # pragma: no cover - cần model đã train
-    """Nạp model mới nhất do job batch ghi. Trả ``(model, version)``."""
+    Chưa có model (hoặc nạp lỗi) thì trả ``(None, None)``: job streaming vẫn
+    chạy, chỉ là ``risk_score = null``.
+    """
     from pyspark.ml import PipelineModel
 
-    path = model_path(delta_root)
-    version_file = os.path.join(delta_root, MODEL_DIR, "CURRENT_VERSION")
-    if not os.path.exists(version_file):
+    pointer = os.path.join(delta_root, MODEL_DIR, CURRENT_VERSION_FILE)
+    if not os.path.exists(pointer):
         return None, None
-    with open(version_file, encoding="utf-8") as fh:
+    with open(pointer, encoding="utf-8") as fh:
         version = fh.read().strip()
     try:
-        return PipelineModel.load(path), version
+        return PipelineModel.load(os.path.join(delta_root, MODEL_DIR, version)), version
     except Exception:
         return None, None
+
+
+load_latest_model = load_current
