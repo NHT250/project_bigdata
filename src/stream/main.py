@@ -15,7 +15,7 @@ from typing import Iterable
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 
-from src.common.schema import bronze_struct
+from src.common.schema import bronze_struct, silver_struct
 
 BRONZE_TABLE = "bronze/edits"
 SILVER_TABLE = "silver/edits_enriched"
@@ -85,4 +85,50 @@ def write_bronze(df: DataFrame, delta_root: str, checkpoint: str):  # pragma: no
         .option("checkpointLocation", checkpoint)
         .trigger(processingTime=TRIGGER)
         .start(table_path(delta_root, BRONZE_TABLE))
+    )
+
+
+def conform_silver(df: DataFrame) -> DataFrame:
+    """Chọn đúng cột silver theo đúng kiểu; cột còn thiếu thành null."""
+    cols = []
+    for field in silver_struct().fields:
+        if field.name in df.columns:
+            cols.append(F.col(field.name).cast(field.dataType).alias(field.name))
+        elif field.name == "dt":
+            cols.append(F.to_date("event_time").alias("dt"))
+        else:
+            cols.append(F.lit(None).cast(field.dataType).alias(field.name))
+    return df.select(*cols)
+
+
+def silver_frame(spark: SparkSession, records: Iterable[dict]) -> DataFrame:
+    names = [f.name for f in silver_struct().fields]
+    rows = [{n: r.get(n) for n in names} for r in records]
+    df = spark.createDataFrame(rows, schema=silver_struct())
+    return conform_silver(df.drop("dt"))
+
+
+def merge_silver(spark: SparkSession, batch_df: DataFrame, delta_root: str) -> None:
+    """MERGE batch vào silver theo ``(wiki, rev_id)`` — idempotent.
+
+    Replay bằng Last-Event-ID chắc chắn sinh event trùng; xử lý một event 5 lần
+    vẫn cho đúng một dòng. Lần chạy sau ghi đè lần trước (ví dụ diff từng
+    timeout nay đã lấy được).
+
+    Phải dedup trong batch trước: MERGE của Delta lỗi khi nguồn có khoá trùng.
+    """
+    from delta.tables import DeltaTable
+
+    source = conform_silver(batch_df).dropDuplicates(["wiki", "rev_id"])
+    path = table_path(delta_root, SILVER_TABLE)
+    if not DeltaTable.isDeltaTable(spark, path):
+        source.write.format("delta").mode("append").partitionBy("dt").save(path)
+        return
+    (
+        DeltaTable.forPath(spark, path)
+        .alias("t")
+        .merge(source.alias("s"), "t.wiki = s.wiki AND t.rev_id = s.rev_id")
+        .whenMatchedUpdateAll()
+        .whenNotMatchedInsertAll()
+        .execute()
     )
