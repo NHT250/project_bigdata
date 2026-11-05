@@ -6,3 +6,4 @@ state/
 .pytest_cache/
 spark-warehouse/
 delta/
+evidence/out/

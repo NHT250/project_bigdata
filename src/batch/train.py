@@ -68,13 +68,16 @@ def add_class_weights(df: DataFrame) -> DataFrame:
     )
 
 
-def train_gbt(train_df: DataFrame, max_iter: int = 50, seed: int = 42) -> PipelineModel:
-    data = add_class_weights(prepare_features(train_df)).withColumn(
+def train_gbt(
+    train_df: DataFrame, max_iter: int = 50, seed: int = 42, feature_cols=FEATURE_COLS
+) -> PipelineModel:
+    """``feature_cols`` chỉ đổi khi CỐ Ý minh hoạ rò rỉ (evidence/ev5_leakage.py)."""
+    data = add_class_weights(prepare_features(train_df, feature_cols)).withColumn(
         "label_d", F.col("label").cast("double")
     )
     pipeline = Pipeline(
         stages=[
-            VectorAssembler(inputCols=feature_input_cols(), outputCol="features"),
+            VectorAssembler(inputCols=feature_input_cols(feature_cols), outputCol="features"),
             GBTClassifier(
                 featuresCol="features",
                 labelCol="label_d",
@@ -130,10 +133,10 @@ def _metrics_from_scores(scored: DataFrame) -> dict:
     }
 
 
-def evaluate(model: PipelineModel, test_df: DataFrame) -> dict:
+def evaluate(model: PipelineModel, test_df: DataFrame, feature_cols=FEATURE_COLS) -> dict:
     from pyspark.ml.functions import vector_to_array
 
-    pred = model.transform(prepare_features(test_df))
+    pred = model.transform(prepare_features(test_df, feature_cols))
     return _metrics_from_scores(
         pred.withColumn("p", vector_to_array("probability")[1])
     )
