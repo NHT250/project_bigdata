@@ -20,6 +20,12 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+# PySpark đổi TIMESTAMP về giờ địa phương của tiến trình Python khi collect().
+# Cố định UTC để test không phụ thuộc múi giờ máy chạy.
+os.environ["TZ"] = "UTC"
+if hasattr(__import__("time"), "tzset"):
+    __import__("time").tzset()
+
 
 @pytest.fixture(scope="session")
 def spark():
