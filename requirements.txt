@@ -7,6 +7,10 @@ psycopg-pool==3.2.4
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 requests==2.32.3
+numpy==1.26.4
+pandas==2.2.3
+# pyspark 3.5 ml còn import distutils (đã bị gỡ khỏi Python 3.12); setuptools cung cấp shim
+setuptools==75.6.0
 
 # Chỉ dùng cho test
 pytest==8.3.4
