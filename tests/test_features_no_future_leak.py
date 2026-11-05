@@ -64,3 +64,11 @@ def test_user_window_counts_same_user_across_pages(spark):
 def test_null_user_hash_counts_zero(spark):
     recs = [bronze(user_hash=None, event_time=at(m)) for m in (0, 1)]
     assert counts(spark, recs, "user_edits_prev_1h") == [0, 0]
+
+
+def test_features_no_future_leak(spark):
+    """Tên test bắt buộc theo spec §8.1: thêm edit tương lai không đổi feature quá khứ."""
+    past = [bronze(user_hash="u1", event_time=at(m)) for m in (0, 15, 30)]
+    future = [bronze(user_hash="u1", event_time=at(m)) for m in (31, 40, 45)]
+    for col in ("page_edits_prev_1h", "user_edits_prev_1h"):
+        assert counts(spark, past + future, col)[:3] == counts(spark, past, col) == [0, 1, 2]

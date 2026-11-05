@@ -65,14 +65,28 @@ services:
     platform: linux/arm64
     restart: unless-stopped
     # local mode trên VM 24 GB: một tiến trình, ít thứ phải vận hành hơn
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    env_file: .env
     environment:
       SPARK_MODE: master
       SPARK_DAEMON_MEMORY: 2g
+      PYTHONPATH: /app
+      # /app chỉ đọc: checkpoint, model, cache ivy phải nằm ở volume ghi được
+      DELTA_ROOT: /data/delta
+      CHECKPOINT_ROOT: /state/checkpoints
+      HOME: /state/home
+      KAFKA_BOOTSTRAP: kafka:9092
+      PG_DSN: postgresql://wiki:wiki@postgres:5432/wiki
     volumes:
       - ./:/app:ro
       - delta-data:/data/delta
       - spark-state:/state
     working_dir: /app
+    # Job chạy bằng `make stream` / `make batch` (docker compose exec), không tự chạy
     command: tail -f /dev/null
 
   ingest:

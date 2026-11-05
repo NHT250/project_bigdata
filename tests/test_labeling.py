@@ -99,3 +99,19 @@ def test_rollback_on_other_page_does_not_label_us(spark):
 def test_labeled_rows_carry_features_and_labeled_at(spark):
     row = run(spark, [ours()]).collect()[0]
     assert row.labeled_at is not None and "byte_delta" in row.asDict()
+
+
+@pytest.mark.parametrize(
+    "kwargs, expected",
+    [
+        ({"later_tags": ["mw-rollback"]}, (1, "tag_rollback")),
+        ({"later_tags": ["mw-undo"], "undo_of": OUR_REV}, (1, "tag_undo")),
+        ({"later_comment": "Reverted edits by [[Special:Contributions/1.2.3.4|1.2.3.4]]"},
+         (1, "comment_match")),
+        ({"later": None}, (0, "survived")),
+    ],
+    ids=["rollback", "undo", "comment", "survived"],
+)
+def test_label_logic(spark, kwargs, expected):
+    """Tên test bắt buộc theo spec §8.1: rollback / undo / comment / sống sót."""
+    assert label_for(spark, **kwargs) == expected

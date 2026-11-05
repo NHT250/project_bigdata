@@ -10,6 +10,7 @@ Chạy trên VM: ``spark-submit --packages ... -m src.stream.main`` (xem README)
 
 from __future__ import annotations
 
+import os
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -63,6 +64,8 @@ def build_spark(app_name: str = "realtime-wiki-stream") -> SparkSession:  # prag
         .config("spark.sql.parquet.compression.codec", "zstd")
         .config("spark.sql.session.timeZone", "UTC")
         .config("spark.sql.shuffle.partitions", "6")
+        # cache --packages của Ivy phải ở thư mục ghi được trong container
+        .config("spark.jars.ivy", os.path.join(os.environ.get("HOME", "/tmp"), ".ivy2"))
     )
     return configure_spark_with_delta_pip(
         builder,
