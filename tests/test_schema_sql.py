@@ -1,12 +1,12 @@
 """Test cho Task 3. CẦN một Postgres đang chạy.
 
-Container của Claude không có Postgres server nên những test này CHƯA được
-chạy. Trên VM Oracle hoặc máy có Docker:
+Trên máy có Docker hoặc VM Oracle:
 
     make up
     PG_DSN=postgresql://wiki:wiki@localhost:5432/wiki pytest tests/test_schema_sql.py -v
 
-Tự bỏ qua khi không có PG_DSN hoặc không có psycopg, để bộ test chung vẫn xanh.
+Không có PG_DSN thì conftest tự khởi động ``pgserver`` (pip install pgserver).
+Tự bỏ qua khi không có cả hai, để bộ test chung vẫn xanh.
 """
 
 import os
@@ -16,12 +16,6 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-psycopg = pytest.importorskip("psycopg", reason="psycopg chưa được cài")
-PG_DSN = os.environ.get("PG_DSN")
-pytestmark = pytest.mark.skipif(
-    not PG_DSN, reason="PG_DSN chưa đặt — cần một Postgres đang chạy"
-)
 
 EXPECTED_TABLES = {
     "edits_live",
@@ -33,18 +27,14 @@ EXPECTED_TABLES = {
 
 
 @pytest.fixture
-def conn():
-    with psycopg.connect(PG_DSN) as connection:
-        schema = (Path(__file__).resolve().parents[1] / "sql" / "schema.sql").read_text()
-        connection.execute(schema)
-        connection.commit()
-        yield connection
-        connection.rollback()
+def conn(pg_conn):
+    # pg_conn (conftest): lược đồ riêng cho mỗi test, đã nạp schema.sql
+    return pg_conn
 
 
 def test_all_five_tables_exist(conn):
     rows = conn.execute(
-        "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'"
+        "SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema()"
     ).fetchall()
     assert EXPECTED_TABLES <= {r[0] for r in rows}
 
@@ -82,7 +72,7 @@ def test_page_title_accepts_unicode_slash_quote_and_long_values(conn):
 
 def test_indexes_exist_for_the_dashboard_queries(conn):
     rows = conn.execute(
-        "SELECT indexname FROM pg_indexes WHERE schemaname = 'public'"
+        "SELECT indexname FROM pg_indexes WHERE schemaname = current_schema()"
     ).fetchall()
     names = {r[0] for r in rows}
     assert {
@@ -98,4 +88,3 @@ def test_schema_is_idempotent(conn):
     schema = (Path(__file__).resolve().parents[1] / "sql" / "schema.sql").read_text()
     conn.execute(schema)
     conn.execute(schema)
-    conn.commit()
