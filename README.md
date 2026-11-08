@@ -193,7 +193,7 @@ Cột "khi demo" điền lúc chạy thật trên VM (spec §13). Lấy bằng `
 |---|---|---|
 | Spark / PySpark | 3.5.3 | |
 | Delta Lake (`delta-spark`) | 3.2.1 | |
-| Kafka (image `bitnami/kafka`) | 3.9 | |
+| Kafka (image `bitnamilegacy/kafka`) | 3.9 | |
 | PostgreSQL | 16 | |
 | Python (ingest, api) | 3.11 | |
 | FastAPI | 0.115.6 | |

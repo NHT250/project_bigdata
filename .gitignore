@@ -7,3 +7,4 @@ state/
 spark-warehouse/
 delta/
 evidence/out/
+docker-compose.override.yml

@@ -5,7 +5,7 @@
 
 services:
   kafka:
-    image: bitnami/kafka:3.9
+    image: bitnamilegacy/kafka:3.9
     platform: linux/arm64
     restart: unless-stopped
     environment:
@@ -29,7 +29,7 @@ services:
       retries: 10
 
   kafka-init:
-    image: bitnami/kafka:3.9
+    image: bitnamilegacy/kafka:3.9
     platform: linux/arm64
     depends_on:
       kafka:
@@ -62,7 +62,7 @@ services:
       retries: 10
 
   spark:
-    image: bitnami/spark:3.5.3
+    image: bitnamilegacy/spark:3.5.3
     platform: linux/arm64
     restart: unless-stopped
     # local mode trên VM 24 GB: một tiến trình, ít thứ phải vận hành hơn
