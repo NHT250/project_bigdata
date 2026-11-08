@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import ipaddress
 import json
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Any, MutableMapping
 
@@ -72,6 +73,9 @@ record thật đến sau đó. Xem Review Focus #2.
 
 _PII_KEYS = ("user", "user_text")
 
+_TEMP_ACCOUNT_RE = re.compile(r"^~\d{4}-\d")
+"""Wikipedia đã thay địa chỉ IP của người sửa vô danh bằng tài khoản tạm ~NĂM-số."""
+
 
 def is_anonymous(ev: MutableMapping[str, Any]) -> bool:
     """Edit vô danh dùng địa chỉ IP làm tên tác giả."""
@@ -80,6 +84,8 @@ def is_anonymous(ev: MutableMapping[str, Any]) -> bool:
     user = ev.get("user")
     if not user:
         return False
+    if _TEMP_ACCOUNT_RE.match(str(user)):
+        return True
     try:
         ipaddress.ip_address(str(user))
     except ValueError:

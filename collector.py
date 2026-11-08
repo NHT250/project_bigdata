@@ -17,6 +17,7 @@ Khong can cai them thu vien nao: chi dung thu vien chuan cua Python 3.
 import gzip
 import hashlib
 import json
+import re
 import os
 import secrets
 import signal
@@ -131,7 +132,7 @@ def to_record(ev, salt):
     if not is_anon:
         # EventStreams cu khong co user_is_anon -> suy ra tu dang IP
         u = str(ev.get("user", ""))
-        is_anon = u.count(".") == 3 or ":" in u
+        is_anon = u.count(".") == 3 or ":" in u or re.match(r"^~\d{4}-\d", u) is not None
 
     return {
         "event_id": meta.get("id"),

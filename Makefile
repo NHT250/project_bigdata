@@ -8,7 +8,7 @@ collect:   ; python3 collector.py
 replay:    ; PYTHONPATH=. python3 -m src.ingest.replay
 # --- chạy trong container spark (xem README) ---
 SPARK_EXEC = docker compose exec spark
-spark-deps: ; $(SPARK_EXEC) pip install --user -q delta-spark==3.2.1 'psycopg[binary]==3.2.3' numpy==1.26.4 pandas==2.2.3 setuptools==75.6.0
+spark-deps: ; $(SPARK_EXEC) pip install --user -q --no-deps delta-spark==3.2.1 && $(SPARK_EXEC) pip install --user -q importlib_metadata 'psycopg[binary]==3.2.3' numpy==1.26.4 pandas==2.2.3 setuptools==75.6.0
 stream:    ; docker compose exec -d spark bash -c 'python -m src.stream.main >> /state/stream.log 2>&1'
 stream-logs: ; $(SPARK_EXEC) tail -f /state/stream.log
 batch:     ; $(SPARK_EXEC) python -m src.batch.main

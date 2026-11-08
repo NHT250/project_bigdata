@@ -219,3 +219,14 @@ def test_collector_also_strips_pii():
 
     produced = collector.to_record(make_event(user="203.113.45.7"), "s")
     assert "203.113" not in json.dumps(produced)
+
+
+@pytest.mark.parametrize("user", ["~2026-12345-67", "~2025-1-2"])
+def test_temporary_accounts_count_as_anonymous(user):
+    """Wikipedia thay địa chỉ IP bằng tài khoản tạm dạng ~NĂM-..."""
+    assert is_anonymous({"user": user}) is True
+
+
+@pytest.mark.parametrize("user", ["Alice", "~Tilde fan", "~2026", "2026-1-2"])
+def test_names_that_only_look_similar_are_not_anonymous(user):
+    assert is_anonymous({"user": user}) is False

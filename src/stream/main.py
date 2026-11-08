@@ -64,6 +64,7 @@ def build_spark(app_name: str = "realtime-wiki-stream") -> SparkSession:  # prag
         .config("spark.sql.parquet.compression.codec", "zstd")
         .config("spark.sql.session.timeZone", "UTC")
         .config("spark.sql.shuffle.partitions", "6")
+        .config("spark.driver.memory", os.environ.get("SPARK_DRIVER_MEMORY", "3g"))
         # cache --packages của Ivy phải ở thư mục ghi được trong container
         .config("spark.jars.ivy", os.path.join(os.environ.get("HOME", "/tmp"), ".ivy2"))
     )

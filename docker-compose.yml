@@ -65,6 +65,8 @@ services:
     image: bitnamilegacy/spark:3.5.3
     platform: linux/arm64
     restart: unless-stopped
+    # Volume /state và /data/delta do root sở hữu; user 1001 mặc định không ghi được
+    user: root
     # local mode trên VM 24 GB: một tiến trình, ít thứ phải vận hành hơn
     depends_on:
       kafka:
@@ -75,7 +77,8 @@ services:
     environment:
       SPARK_MODE: master
       SPARK_DAEMON_MEMORY: 2g
-      PYTHONPATH: /app
+      # Giữ pyspark có sẵn trong image; ghi đè PYTHONPATH thành /app là mất nó
+      PYTHONPATH: /app:/opt/bitnami/spark/python:/opt/bitnami/spark/python/lib/py4j-0.10.9.7-src.zip
       # /app chỉ đọc: checkpoint, model, cache ivy phải nằm ở volume ghi được
       DELTA_ROOT: /data/delta
       CHECKPOINT_ROOT: /state/checkpoints
@@ -88,7 +91,7 @@ services:
       - spark-state:/state
     working_dir: /app
     # Job chạy bằng `make stream` / `make batch` (docker compose exec), không tự chạy
-    command: tail -f /dev/null
+    command: bash -c "mkdir -p /state/home && tail -f /dev/null"
 
   ingest:
     image: python:3.11-slim
