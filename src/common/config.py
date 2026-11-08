@@ -6,7 +6,7 @@ import os
 from dataclasses import dataclass, field
 
 UA_TEMPLATE = (
-    "VLU-BigData-RealtimeWiki/1.0 "
+    "WikiPulse/1.0 "
     "(Van Lang University course project; {contact})"
 )
 """Wikimedia yêu cầu User-Agent khai báo thật kèm liên hệ.

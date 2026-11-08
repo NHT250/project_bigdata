@@ -2,7 +2,7 @@
 """
 collector.py - Thu du lieu tho tu Wikimedia EventStreams xuong file .jsonl.gz
 
-Do an Big Data Analytics - Realtime Wikipedia
+Do an Big Data Analytics - WikiPulse
 Van Lang University, 72ITDS40303
 
 Muc dich: BAT DAU THU DU LIEU NGAY, doc lap hoan toan voi Kafka/Spark/Delta.
@@ -36,7 +36,7 @@ STREAM_URL = "https://stream.wikimedia.org/v2/stream/recentchange"
 # Wikimedia yeu cau User-Agent khai bao that - gia dang trinh duyet se bi chan.
 CONTACT = ""   # <<< DIEN VAO DAY, vi du: "nhom6.bigdata@gmail.com"
 
-UA = f"VLU-BigData-RealtimeWiki/1.0 (Van Lang University course project; {CONTACT})"
+UA = f"WikiPulse/1.0 (Van Lang University course project; {CONTACT})"
 
 WIKIS = {"enwiki"}          # chi theo doi Wikipedia tieng Anh
 KEEP_TYPES = {"edit"}       # chi lay luot chinh sua

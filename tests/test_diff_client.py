@@ -15,7 +15,7 @@ from src.stream.diff_client import (
     parse_compare_html,
 )
 
-UA = "VLU-BigData-RealtimeWiki/1.0 (Van Lang University course project; a@b.c)"
+UA = "WikiPulse/1.0 (Van Lang University course project; a@b.c)"
 
 COMPARE_HTML = (
     '<tr><td class="diff-deletedline"><div>old casualty text</div></td>'

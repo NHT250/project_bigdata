@@ -88,7 +88,7 @@ def test_settings_user_agent_declares_contact_and_is_not_a_browser(monkeypatch):
     set_env(monkeypatch)
     ua = Settings.load().user_agent
     assert "nhom6@example.com" in ua
-    assert "VLU-BigData-RealtimeWiki/1.0" in ua
+    assert "WikiPulse/1.0" in ua
     for forbidden in ("Mozilla", "Chrome", "Safari", "AppleWebKit"):
         assert forbidden not in ua
 

@@ -29,7 +29,7 @@ def _clean(row: dict) -> dict:
 
 def create_app(connection) -> FastAPI:
     """``connection``: context manager trả một kết nối psycopg (pool hoặc test)."""
-    app = FastAPI(title="Realtime Wikipedia", version="1.0")
+    app = FastAPI(title="WikiPulse", version="1.0")
 
     def fetch(sql: str, params: dict | None = None) -> list[dict]:
         with connection() as conn:

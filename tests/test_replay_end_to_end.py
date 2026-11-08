@@ -159,7 +159,7 @@ def test_model_scores_are_written_when_model_given(spark, tmp_path, pg_conn, fak
 
 
 def test_settings_user_agent_is_declared(settings):
-    assert "VLU-BigData-RealtimeWiki" in replace(settings).user_agent
+    assert "WikiPulse/1.0" in replace(settings).user_agent
 
 
 def test_silver_reads_in_a_batch_prune_dt_partitions(spark, tmp_path, pg_conn, fake_http, settings):

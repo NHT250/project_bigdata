@@ -1,6 +1,6 @@
-# Hệ thống phân tích Wikipedia thời gian thực
+# WikiPulse
 
-Đồ án Big Data Analytics (72ITDS40303), Đại học Văn Lang. Chủ đề 6: Wikipedia thời gian thực.
+Hệ thống phân tích Wikipedia thời gian thực. Đồ án Big Data Analytics (72ITDS40303), Đại học Văn Lang, chủ đề 6.
 
 Hệ thống thu mọi lượt chỉnh sửa trên Wikipedia tiếng Anh ngay khi chúng xảy ra, lấy nội dung thay đổi qua API chính thức, chấm điểm rủi ro bằng model nhóm tự huấn luyện, và phục vụ một website gồm dashboard live, tra cứu theo trang và hỏi đáp.
 
