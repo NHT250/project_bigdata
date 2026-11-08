@@ -129,3 +129,5 @@ footer { padding: 16px var(--gutter) 28px; border-top: 1px solid var(--rule); co
   .stream .bar { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+
+pre.sql { margin: 0; padding: 12px; background: var(--surface); border: 1px solid var(--rule); white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.88rem; }

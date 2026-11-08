@@ -155,6 +155,22 @@ Mỗi script trong `evidence/` ghi một file markdown vào `evidence/out/`. Kh�
 
 Các lệnh chạy trong container Spark: `docker compose exec spark <lệnh>`.
 
+## Chat hỏi đáp
+
+Trang `chat.html` nhận câu hỏi tiếng Việt hoặc tiếng Anh, sinh SQL rồi hiện cả câu SQL lẫn bảng kết quả.
+
+**Đây không phải AI nhóm huấn luyện.** SQL do một mô hình ngôn ngữ có sẵn (Claude, gọi qua API) sinh ra. Model nhóm tự huấn luyện là GBT chấm `risk_score`, nằm ở panel "Edit rủi ro cao". Mô hình chỉ nhận lược đồ bảng và câu hỏi, không nhận dữ liệu trong bảng.
+
+Cài đặt: điền `ANTHROPIC_API_KEY` vào `.env` rồi `make up`. Nếu volume Postgres đã tồn tại từ trước, chạy thêm một lần để tạo role chỉ đọc:
+
+```bash
+make chat-role
+```
+
+Bảy lớp rào chắn nằm ở `src/api/nl2sql.py` và `sql/chat_role.sql`: chỉ SELECT, chặn từ khoá ghi, chặn nhiều câu lệnh, chỉ 5 bảng đã biết, LIMIT tối đa 100, `statement_timeout` 5 giây, và role `wiki_chat` chỉ có quyền SELECT. Ngoài ra chỉ cho phép một danh sách hàm SQL cố định, và toàn hệ thống nhận tối đa 20 câu chat mỗi phút để giới hạn chi phí API.
+
+Khi thiếu API key, hết quota, mất mạng hoặc SQL bị chặn, trang hiện lỗi rõ ràng kèm link tới 5 câu hỏi bấm sẵn. Demo không phụ thuộc vào LLM.
+
 ## Pháp lý và đạo đức thu thập dữ liệu
 
 Rút từ spec §2, áp dụng cho mọi thành phần gọi ra ngoài:

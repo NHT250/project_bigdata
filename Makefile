@@ -1,4 +1,4 @@
-.PHONY: up down logs psql test collect replay stream batch nightly evidence web-demo spark-deps stream-logs
+.PHONY: up down logs psql test collect replay stream batch nightly evidence web-demo spark-deps stream-logs chat-role
 up:        ; docker compose up -d
 down:      ; docker compose down
 logs:      ; docker compose logs -f --tail=100
@@ -15,3 +15,4 @@ batch:     ; $(SPARK_EXEC) python -m src.batch.main
 nightly:   ; $(SPARK_EXEC) python -m src.batch.main --nightly
 evidence:  ; $(SPARK_EXEC) bash -c 'for m in ev2_watermark ev5_leakage ev6_skew; do python -m evidence.$$m --delta-root /data/delta --out-dir /state/evidence; done'
 web-demo:  ; PYTHONPATH=. python3 -m tests.demo_server
+chat-role: ; docker compose exec -T postgres psql -U wiki -d wiki -v ON_ERROR_STOP=1 < sql/chat_role.sql

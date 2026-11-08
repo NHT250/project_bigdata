@@ -953,6 +953,16 @@ def test_llm_failure_falls_back_to_template():
 
 ---
 
+### Task 24: Chat hỏi đáp sinh SQL
+
+**Files:** Create `src/api/nl2sql.py`, `src/web/chat.html`, `sql/chat_role.sql`; Modify `src/api/main.py` (`POST /api/chat`), `src/web/app.js`, `README.md`, `docs/ai-use-declaration.md`; Test `tests/test_nl2sql.py`.
+
+**Interfaces:** `nl2sql.SCHEMA_PROMPT: str`; `nl2sql.generate_sql(question, llm) -> str`; `nl2sql.validate_sql(sql) -> tuple[bool, str]`; `nl2sql.answer(question, conn, llm) -> dict` (`sql`, `rows`, `columns`, `error`).
+
+Đây không phải AI nhóm train. Bảy lớp rào chắn: chỉ SELECT; chặn từ khoá ghi; chặn `;` ở giữa; whitelist 5 bảng; LIMIT 100; `statement_timeout = 5s`; role Postgres chỉ có SELECT. LLM lỗi hoặc SQL bị chặn thì trả lỗi rõ ràng và gợi ý 5 câu bấm sẵn.
+
+---
+
 ## Thứ tự và phụ thuộc
 
 ```

@@ -52,6 +52,7 @@ services:
     volumes:
       - pg-data:/var/lib/postgresql/data
       - ./sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./sql/chat_role.sql:/docker-entrypoint-initdb.d/02-chat-role.sql:ro
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
@@ -118,6 +119,8 @@ services:
     env_file: .env
     environment:
       PG_DSN: postgresql://wiki:wiki@postgres:5432/wiki
+      # Role chỉ đọc cho chat (sql/chat_role.sql); bỏ biến này thì chat tự tắt
+      CHAT_PG_DSN: postgresql://wiki_chat:wiki_chat@postgres:5432/wiki
       PYTHONPATH: /app
     volumes:
       - ./:/app
@@ -126,7 +129,7 @@ services:
       - "8000:8000"
     command: >
       bash -c "pip install --no-cache-dir fastapi==0.115.6 'uvicorn[standard]==0.34.0'
-      'psycopg[binary]==3.2.3' psycopg-pool==3.2.4 &&
+      'psycopg[binary]==3.2.3' psycopg-pool==3.2.4 anthropic==2.6.0 &&
       uvicorn src.api.main:app --host 0.0.0.0 --port 8000"
 
 volumes:

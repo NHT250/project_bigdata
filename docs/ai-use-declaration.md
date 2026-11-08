@@ -31,5 +31,6 @@ Tách biệt với việc dùng AI để viết code, hệ thống có ba tính 
 | Phát hiện edit rủi ro | GBTClassifier (Spark MLlib), học có giám sát trên nhãn tự sinh từ revert | **Có** |
 | Phát hiện sự kiện nóng | Thống kê cửa sổ trượt, z-score so với đường nền EWMA | Không, không phải AI |
 | Tóm tắt thay đổi | Khuôn mẫu; tuỳ chọn gọi LLM có sẵn | Không |
+| Chat hỏi đáp sinh SQL | Mô hình ngôn ngữ có sẵn (Claude) gọi qua API, kèm rào chắn SQL | **Không**, nhóm chỉ sử dụng |
 
 Slide cuối của bài trình bày nhắc lại tuyên bố này.

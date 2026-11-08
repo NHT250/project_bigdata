@@ -255,6 +255,65 @@ async function initAsk() {
   }));
 }
 
+// --- chat -------------------------------------------------------------------
+
+function showChat(data) {
+  const error = document.getElementById("chat-error");
+  const canned = document.getElementById("chat-canned");
+  const sqlBox = document.getElementById("chat-sql-box");
+  const resultBox = document.getElementById("chat-result-box");
+
+  error.hidden = !data.error;
+  error.textContent = data.error || "";
+  canned.hidden = !(data.canned && data.canned.length);
+  canned.replaceChildren(...(data.canned || []).map((q) =>
+    el("a", { class: "status", href: `ask.html#q${q.qid}`, text: q.title })));
+
+  sqlBox.hidden = !data.sql;
+  document.getElementById("chat-sql").textContent = data.sql || "";
+
+  resultBox.hidden = !(data.columns && data.columns.length);
+  const table = document.getElementById("chat-result");
+  table.querySelector("thead").replaceChildren(el("tr", {}, ...(data.columns || []).map((c) => el("th", { text: c }))));
+  if (data.columns && data.columns.length && !data.rows.length) {
+    fillBody(table, [el("tr", {}, el("td", { colspan: String(data.columns.length), class: "empty", text: "Câu truy vấn chạy được nhưng không có dòng nào." }))]);
+    return;
+  }
+  fillBody(table, (data.rows || []).map((row) => el("tr", {}, ...row.map((v) => {
+    const isNum = typeof v === "number";
+    const text = v === null ? "–" : typeof v === "string" && /^\d{4}-\d\d-\d\dT/.test(v) ? fmt.hour(v) : isNum ? v.toLocaleString("vi-VN") : String(v);
+    return el("td", { class: isNum ? "num" : null, text });
+  }))));
+}
+
+function initChat() {
+  const form = document.getElementById("chat-form");
+  const input = document.getElementById("question");
+  const send = document.getElementById("send");
+  form.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const question = input.value.trim();
+    if (!question) return;
+    send.disabled = true;
+    setStatus("Đang sinh câu truy vấn...");
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ question }),
+      });
+      const data = await res.json();
+      showChat(res.ok ? data : { error: typeof data.detail === "string" ? data.detail : `Không gửi được câu hỏi (mã ${res.status}).` });
+      setStatus("");
+    } catch (e) {
+      showChat({ error: "Không kết nối được máy chủ. Kiểm tra API rồi thử lại." });
+      setStatus("");
+    } finally {
+      send.disabled = false;
+    }
+  });
+}
+
 // --- khởi động --------------------------------------------------------------
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -266,5 +325,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initLookup();
   } else if (page === "ask") {
     initAsk().catch((e) => setStatus(`Không tải được danh sách câu hỏi: ${e.message}`));
+  } else if (page === "chat") {
+    initChat();
   }
 });
